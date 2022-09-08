@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Add a default marker</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+<script src="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css" rel="stylesheet" />
+<style>
+	body { margin: 0; padding: 0; }
+	#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+
+	<script src="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.2.0/dist/maplibre-gl-geocoder.min.js"></script>
+	<link
+	rel="stylesheet"
+	href="https://unpkg.com/@maplibre/maplibre-gl-geocoder@1.2.0/dist/maplibre-gl-geocoder.css"
+	type="text/css"
+	/>
+	<div id="map"></div>
+	
+	<script>
+	var map = new maplibregl.Map({
+	container: 'map',
+	style:
+	'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
+	center: [0, 0],
+	zoom: 1.5
+	});
+	
+
+	var geocoder_api = {
+		forwardGeocode: async (config) => {
+			const features = [];
+				try {
+					// let request = 'https://nominatim.openstreetmap.org/search?q=' + config.query + '&format=geojson&polygon_geojson=1&addressdetails=1';
+					let request= "https://location-service.jmgsfua8hvs24.us-west-2.cs.amazonlightsail.com/searchplace/:" + config.query
+					console.log(geocoder_api.query)
+					const response = await fetch(request, {method: "GET", headers: {"Access-Control-Allow-Origin": "*"}});
+					const geojson = await response.json();
+					for (let feature of geojson.features) {
+						let center = [
+							feature.bbox[0] +
+							(feature.bbox[2] - feature.bbox[0]) / 2,
+							feature.bbox[1] +
+							(feature.bbox[3] - feature.bbox[1]) / 2
+						];
+						let point = {
+							type: 'Feature',
+							geometry: {
+							type: 'Point',
+							coordinates: center
+						},
+						place_name: feature.properties.name,
+						properties: feature.properties,
+						text: feature.properties.name,
+						place_type: ['place'],
+						center: center
+						};
+						features.push(point);
+					}
+				} catch (e) {
+					console.error(`Failed to forwardGeocode with error: ${e}`);
+				}
+				
+			return {
+				features: features
+			};
+		}
+
+	};
+
+	map.addControl(
+		new MaplibreGeocoder(geocoder_api, {
+		maplibregl: maplibregl
+		})
+	);
+
+	// console.log(geocoder_api.query)
+	console.log('here')
+
+</script>
+ 
+</body>
+</html>
